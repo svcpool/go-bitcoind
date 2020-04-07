@@ -33,7 +33,7 @@ type Block struct {
 	Bits string `json:"bits"`
 	
 	// The mint
-	Mint string `json:"mint"`
+	Mint float64 `json:"mint"`
 
 	// The difficulty
 	Difficulty float64 `json:"difficulty"`
