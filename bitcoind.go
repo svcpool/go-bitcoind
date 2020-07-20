@@ -245,6 +245,23 @@ func (b *Bitcoind) GetDifficulty() (difficulty float64, err error) {
 	return
 }
 
+type NVCDifficultyResult struct {
+	ProofOfStake float64 `json:"proof-of-stake"`
+}
+
+// GetDifficulty returns the proof-of-work difficulty as a multiple of
+// the minimum difficulty.
+func (b *Bitcoind) GetPosDifficulty() (difficulty float64, err error) {
+	r, err := b.client.call("getdifficulty", nil)
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	res := NVCDifficultyResult{}
+	err = json.Unmarshal(r.Result, &res)
+	difficulty = res.ProofOfStake
+	return
+}
+
 // GetGenerate returns true or false whether bitcoind is currently generating hashes
 func (b *Bitcoind) GetGenerate() (generate bool, err error) {
 	r, err := b.client.call("getgenerate", nil)
