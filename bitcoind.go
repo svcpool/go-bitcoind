@@ -19,6 +19,10 @@ type Bitcoind struct {
 	client *rpcClient
 }
 
+func (b Bitcoind) GetClient() *rpcClient {
+	return b.client
+}
+
 // New return a new bitcoind
 func New(host string, port int, user, passwd string, useSSL bool, timeoutParam ...int) (*Bitcoind, error) {
 	var timeout int = RPCCLIENT_TIMEOUT
@@ -39,6 +43,44 @@ func New(host string, port int, user, passwd string, useSSL bool, timeoutParam .
 func (b *Bitcoind) BackupWallet(destination string) error {
 	r, err := b.client.call("backupwallet", []string{destination})
 	return handleError(err, &r)
+}
+
+type CreateRawTransactionStruct struct {
+	Txid string `json:"txid"`
+	Vout int64  `json:"vout"`
+}
+
+func (b *Bitcoind) CreateRawTransaction(rawTxStruct []CreateRawTransactionStruct, amounts map[string]float64) (hex string, err error) {
+	r, err := b.client.call("createrawtransaction", []interface{}{rawTxStruct, amounts})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	err = json.Unmarshal(r.Result, &hex)
+	return
+}
+
+type signRawTranasactionResult struct {
+	Hex      string `json:"hex"`
+	Complete bool   `json:"complete"`
+}
+
+func (b *Bitcoind) SignRawTransaction(hex string) (signRawTx signRawTranasactionResult, err error) {
+	i := []interface{}{hex, nil, nil, nil}
+	r, err := b.client.call("signrawtransaction", i)
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	err = json.Unmarshal(r.Result, &signRawTx)
+	return
+}
+
+func (b *Bitcoind) SendRawTransaction(hex string) (txHash string, err error) {
+	r, err := b.client.call("sendrawtransaction", []interface{}{hex})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	err = json.Unmarshal(r.Result, &txHash)
+	return
 }
 
 // DumpPrivKey return private key as string associated to public <address>
@@ -629,6 +671,19 @@ func (b *Bitcoind) ListTransactions(account string, count, from uint32) (transac
 
 // ListUnspent returns array of unspent transaction inputs in the wallet.
 func (b *Bitcoind) ListUnspent(minconf, maxconf uint32) (transactions []Transaction, err error) {
+	if maxconf > 999999 {
+		maxconf = 999999
+	}
+	r, err := b.client.call("listunspent", []interface{}{minconf, maxconf})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	err = json.Unmarshal(r.Result, &transactions)
+	return
+}
+
+// ListUnspent returns array of unspent transaction inputs in the wallet.
+func (b *Bitcoind) RawListUnspent(minconf, maxconf uint32) (transactions []CreateRawTxStruct, err error) {
 	if maxconf > 999999 {
 		maxconf = 999999
 	}

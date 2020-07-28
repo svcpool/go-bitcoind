@@ -92,3 +92,14 @@ type TransactionOutSet struct {
 	HashSerialized  string  `json:"hash_serialized"`
 	TotalAmount     float64 `json:"total_amount"`
 }
+
+type CreateRawTxStruct struct {
+	Account       string  `json:"account"`
+	Address       string  `json:"address"`
+	Amount        float64 `json:"amount"`
+	Confirmations int64   `json:"confirmations"`
+	ScriptPubKey  string  `json:"scriptPubKey"`
+	Spendable     bool    `json:"spendable"`
+	Txid          string  `json:"txid"`
+	Vout          int64   `json:"vout"`
+}

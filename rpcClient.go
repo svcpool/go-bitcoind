@@ -18,6 +18,7 @@ type rpcClient struct {
 	passwd     string
 	httpClient *http.Client
 	timeout    int
+	Tries      int
 }
 
 // rpcRequest represent a RCP request
@@ -98,7 +99,7 @@ func (c *rpcClient) doTimeoutRequest(timer *time.Timer, req *http.Request) (*htt
 }
 
 // call prepare & exec the request
-func (c *rpcClient) call(method string, params interface{}) (rr rpcResponse, err error) {
+func (c *rpcClient) call(method string, params interface{}, try ...int) (rr rpcResponse, err error) {
 	connectTimer := time.NewTimer(time.Duration(c.timeout) * time.Second)
 	rpcR := rpcRequest{method, params, time.Now().UnixNano(), "1.0"}
 	payloadBuffer := &bytes.Buffer{}
@@ -121,6 +122,14 @@ func (c *rpcClient) call(method string, params interface{}) (rr rpcResponse, err
 
 	resp, err := c.doTimeoutRequest(connectTimer, req)
 	if err != nil {
+		if len(try) == 0 {
+			try[0] = 0
+		}
+		try[0]++
+		if try[0] < c.Tries {
+			time.Sleep(2)
+			return c.call(method, params, try[0])
+		}
 		return
 	}
 	defer resp.Body.Close()
