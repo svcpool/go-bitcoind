@@ -123,7 +123,7 @@ func (c *rpcClient) call(method string, params interface{}, try ...int) (rr rpcR
 	resp, err := c.doTimeoutRequest(connectTimer, req)
 	if err != nil {
 		if len(try) == 0 {
-			try[0] = 0
+			try = []int{0}
 		}
 		try[0]++
 		if try[0] < c.Tries {
